@@ -49,11 +49,9 @@ class StationInformation(DocType):
     capacity = Integer()
     name = Text(analyzer='snowball')
     short_name = Text(analyzer='snowball')
-    # TODO convert lat/lon to location = GeoPoint()
     location = GeoPoint()
-    lon = Text()
-    lat = Text()
     station_id = Text(analyzer='snowball')
+    # TODO can rental_methods be an array? Maybe nested?
     rental_methods = Text()  # [u'KEY', u'CREDITCARD'],
     eightd_has_key_dispenser = Boolean()
     region_id = Integer()

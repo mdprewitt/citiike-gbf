@@ -25,10 +25,12 @@ def load_stations(gbf):
     for station_data in gbf.station_information():
         try:
             log.info("Loading Station {0}".format(station_data['name']))
-            station_data['rental_methods'] = ", ".join(station_data['rental_methods'])
+            # TODO this is kind of hacky to modify the original dict, find a better way
+            station_data['location'] = {'lon': station_data['lon'], 'lat': station_data['lat']}
+            del station_data['lat']
+            del station_data['lon']
             station = StationInformation(_id=station_data['station_id'], **station_data)
             station.status_date = datetime.utcnow()
-            station.location = {'lon': station['lon'], 'lat': station['lat']}
             station.save()
             STATIONS[station_data['station_id']] = station
         except Exception as e:
