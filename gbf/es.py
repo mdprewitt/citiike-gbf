@@ -1,4 +1,4 @@
-from elasticsearch_dsl import DocType, Text, Integer, Date, Boolean
+from elasticsearch_dsl import DocType, Text, Integer, Date, Boolean, GeoPoint
 
 
 class StationStatus(DocType):
@@ -17,6 +17,7 @@ class StationStatus(DocType):
     }
     """
     station_id = Text()
+    location = GeoPoint()
     num_bikes_available = Integer()
     num_docks_available = Integer()
     num_docs_disabled = Integer()
@@ -49,6 +50,7 @@ class StationInformation(DocType):
     name = Text(analyzer='snowball')
     short_name = Text(analyzer='snowball')
     # TODO convert lat/lon to location = GeoPoint()
+    location = GeoPoint()
     lon = Text()
     lat = Text()
     station_id = Text(analyzer='snowball')

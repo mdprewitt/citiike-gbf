@@ -28,8 +28,9 @@ def load_stations(gbf):
             station_data['rental_methods'] = ", ".join(station_data['rental_methods'])
             station = StationInformation(_id=station_data['station_id'], **station_data)
             station.status_date = datetime.utcnow()
+            station.location = {'lon': station['lon'], 'lat': station['lat']}
             station.save()
-            STATIONS[station_data['station_id']] = station_data
+            STATIONS[station_data['station_id']] = station
         except Exception as e:
             log.exception(e)
 
@@ -46,11 +47,12 @@ def load_station_metrics(gbf):
                     )
                 status = StationStatus(_id=unique_id, **station_status)
                 try:
-                    station_name = STATIONS[station_status['station_id']]['name']
+                    station_name = STATIONS[station_status['station_id']].name
                 except:
                     load_stations(gbf)
-                    station_name = STATIONS[station_status['station_id']]['name']
+                    station_name = STATIONS[station_status['station_id']].name
                 status.station_name = station_name
+                status.location = STATIONS[station_status['station_id']].location
                 log.info("Loading Station Metrics {0}".format(status.station_name))
                 status.save()
             except Exception as e:
