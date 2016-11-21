@@ -16,7 +16,7 @@ from gbf import GeneralBikeshareFeed
 from gbf.es import StationStatus, StationInformation
 
 __version__ = '1.0.0'
-module = sys.modules['__main__'].__file__
+module = os.path.basename(__file__)
 log = logging.getLogger(module)
 
 STATIONS = dict()
@@ -26,7 +26,7 @@ WEATHER_UNDERGROUND_KEY = os.environ.get('WEATHER_UNDERGROUND_KEY', None)
 def load_stations(gbf):
     for station_data in gbf.station_information():
         try:
-            log.info("Loading Station {0}".format(station_data['name']))
+            log.info("Loading Station %s", station_data['name'])
             # TODO this is kind of hacky to modify the original dict, find a better way
             station_data['location'] = {'lon': station_data['lon'], 'lat': station_data['lat']}
             del station_data['lat']
@@ -61,7 +61,7 @@ def load_station_metrics(gbf):
                     status = StationStatus(_id=unique_id, **station_status)
                     status.station_name = station_name
                     status.location = STATIONS[station_status['station_id']].location
-                    log.info("Loading Station Metrics {0}".format(status.station_name))
+                    log.info("Loading Station Metrics %s", status.station_name)
                     status.save()
                 else:
                     log.warning("Station %s [%s] reporting empty data", station_name, station_status['station_id'])
@@ -99,17 +99,19 @@ def parse_command_line(argv):
 def main():
     """Main program. Sets up logging and do some work."""
     logging.basicConfig(stream=sys.stderr, level=logging.WARN,
-                        format='%(name)s (%(levelname)s): %(message)s')
+                        format='[%(asctime)s] %(name)s:%(lineno)s (%(levelname)s): %(message)s')
     try:
         args = parse_command_line(sys.argv)
         connections.create_connection(hosts=args.eshosts)
+
+        # Initialize es indexes if needed
         StationInformation.init()
         StationStatus.init()
 
         gbf = GeneralBikeshareFeed()
-        gbf.system_information()
-        gbf.system_alerts()
-        gbf.system_regions()
+        log.info("System info: %s", gbf.system_information())
+        log.info("Regions: %s", gbf.system_regions())
+        log.info("Alerts: %s", gbf.system_alerts())
         load_station_metrics(gbf)
     except KeyboardInterrupt:
         log.error('Program interrupted!')
