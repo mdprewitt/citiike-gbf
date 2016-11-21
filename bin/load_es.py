@@ -23,6 +23,7 @@ STATIONS = dict()
 
 WEATHER_UNDERGROUND_KEY = os.environ.get('WEATHER_UNDERGROUND_KEY', None)
 
+
 def load_stations(gbf):
     for station_data in gbf.station_information():
         try:
@@ -45,7 +46,7 @@ def load_station_metrics(gbf):
             try:
                 try:
                     station_name = STATIONS[station_status['station_id']].name
-                except:
+                except KeyError:
                     load_stations(gbf)
                     station_name = STATIONS[station_status['station_id']].name
                 last_reported = station_status['last_reported']
