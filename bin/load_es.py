@@ -5,6 +5,7 @@
 import argparse
 import logging
 import sys
+import os
 import time
 from datetime import datetime
 
@@ -20,6 +21,7 @@ log = logging.getLogger(module)
 
 STATIONS = dict()
 
+WEATHER_UNDERGROUND_KEY = os.environ.get('WEATHER_UNDERGROUND_KEY', None)
 
 def load_stations(gbf):
     for station_data in gbf.station_information():
@@ -41,27 +43,33 @@ def load_station_metrics(gbf):
     while True:
         for station_status in gbf.station_status():
             try:
-                unique_id = ":".join([str(station_status['station_id']), str(station_status['last_reported'])])
-                if station_status['last_reported']:
-                    station_status['last_reported'] = datetime.fromtimestamp(
-                        station_status['last_reported'],
-                        tz=pytz.UTC
-                    )
-                status = StationStatus(_id=unique_id, **station_status)
                 try:
                     station_name = STATIONS[station_status['station_id']].name
                 except:
                     load_stations(gbf)
                     station_name = STATIONS[station_status['station_id']].name
-                status.station_name = station_name
-                status.location = STATIONS[station_status['station_id']].location
-                log.info("Loading Station Metrics {0}".format(status.station_name))
-                status.save()
+                last_reported = station_status['last_reported']
+                if last_reported:
+                    # we're not often getting more than one reading per hour so
+                    # round to nearest hour
+                    last_reported = int(last_reported / 3600) * 3600
+                    unique_id = ":".join([str(station_status['station_id']), str(last_reported)])
+                    station_status['last_reported'] = datetime.fromtimestamp(
+                        last_reported,
+                        tz=pytz.UTC
+                    )
+                    status = StationStatus(_id=unique_id, **station_status)
+                    status.station_name = station_name
+                    status.location = STATIONS[station_status['station_id']].location
+                    log.info("Loading Station Metrics {0}".format(status.station_name))
+                    status.save()
+                else:
+                    log.warning("Station %s [%s] reporting empty data", station_name, station_status['station_id'])
             except Exception as e:
                 log.exception(e)
 
         print "Waiting..."
-        time.sleep(10 * 60)
+        time.sleep(30 * 60)
 
 
 def parse_command_line(argv):
